@@ -28,9 +28,9 @@ My goal was to learn:
 - Qt Designer
 - Pillow
 
-## SCreenshots
+## Screenshots
 
-
+<img width="1897" height="1081" alt="Screenshot 2026-06-23 011812" src="https://github.com/user-attachments/assets/a29e3128-e452-4454-b172-1b24da5a1ae1" />
 
 ## Installation
 
