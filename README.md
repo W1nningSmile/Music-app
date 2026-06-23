@@ -1,4 +1,4 @@
-# Music App
+# Music App (WIP)
 
 A localy run desktop music application built with Python and PySide6
 
