@@ -1,7 +1,8 @@
 import ui.main_page_ui as main_page_ui
 import ui.album_widget_template as album_wdiget_template
+import ui.create_album_ui as create_album
 
-from PySide6.QtWidgets import QMainWindow, QApplication, QWidget
+from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox
 from PySide6.QtGui import QPixmap, QMovie
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtCore import QUrl
@@ -22,8 +23,12 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
         self.setFixedSize(self.size())
 
+        self.saving_pannel_state = None
+
         self.ui.label_2.setPixmap(QPixmap("image_ressources/default_cover"))
         self.ui.progressBar.setValue(0)
+
+        self.ui.pushButton_3.clicked.connect(self.toggle_saving_pannel)
 
         self.audio_player = AudioPlayer()
 
@@ -37,6 +42,12 @@ class MainWindow(QMainWindow):
         #anything under here wont load until an album has been selected
         self.cd = None
         self.ui.pushButton_7.clicked.connect(lambda: self.audio_player.start_stop())
+    
+    def toggle_saving_pannel(self):
+        if self.saving_pannel_state is None:
+            self.saving_pannel_state = saving_pannel()
+        self.saving_pannel_state.show()
+
 
         
 
@@ -152,6 +163,98 @@ class AudioPlayer():
     
     def volume_change(self, value):
         self.audio.setVolume(value/100)
+
+class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen here 
+                              #Add gif generation  | check if the user has tweaked with the files + fix them | dont move the selected files but copy them instead? --> apparently this is not how apps usually do it 
+                              # only generate the gif once and 1 per album --> should i make it so its generated when a song from that album is played for the first time or when its first added through the menu? (leaning towards 2nd option + checking on startup and before a song is played if the gif exists --> prevents tampering and crashes)
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("")
+        self.ui = create_album.Ui_Dialog()
+        self.ui.setupUi(self)
+
+        self.chosen_name = None
+        self.chosen_artist = None
+        self.chosen_songs = None
+        self.chosen_cover = None
+
+        self.ui.textEdit.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106)) #character count > 106 will make it hard to read :/
+        self.ui.textEdit_2.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106))
+
+        self.ui.pushButton.clicked.connect(lambda: self.single_file_fetch("Choose cover"))
+        self.ui.pushButton_2.clicked.connect(lambda: self.multi_file_fetch("Choose songs"))
+        #self.ui.label_5.setText(f"{len(self.chosen_songs)} chosen")
+
+        #ok and cancel buttons
+        self.ui.pushButton_3.clicked.connect(lambda: self.create_album()) #ok button
+        self.ui.pushButton_4.clicked.connect(lambda: self.close()) #cancel button
+    
+    def character_limit(self, string, limit): 
+        if len(string) > limit:
+            self.ui.textEdit.setPlainText(string[:limit])
+    
+    def single_file_fetch(self,caption_): #cover
+        file_name, _ = QFileDialog.getOpenFileName(
+            parent=None,
+            caption = caption_,
+            filter="Image Files (*.png)" #add more filters later and turn them all to png
+        )
+        if file_name:
+            self.chosen_cover = file_name
+            self.ui.label_6.setText(f"{Path(file_name).name} chosen")
+            self.ui.label_7.setPixmap(QPixmap(Path(file_name)))
+        print(Path(file_name).name)
+
+        
+    def multi_file_fetch(self,caption_): #songs
+        file_name, _ = QFileDialog.getOpenFileNames(
+            parent=None,
+            caption = caption_,
+            filter="Image Files (*.mp3)" #add more filters later and turn them all to png
+        )
+        if file_name:
+            self.chosen_songs = file_name
+            count = ["", "was"]
+            file_count = len(file_name)
+            if file_count > 1:
+                count = ["s","were"]
+            self.ui.label_5.setText(f"{file_count} file{count[0]} {count[1]} chosen")
+        print(file_name)
+    
+    def create_album(self):
+        self.chosen_name = self.ui.textEdit.toPlainText()
+        self.chosen_artist = self.ui.textEdit_2.toPlainText()
+        print(self.chosen_name)
+
+        if self.chosen_name == "" or self.chosen_cover == None or self.chosen_songs == None or self.chosen_artist == None:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Critical)
+            msg.setText("Error: Please fill out and/or everything that was requested.")
+            msg.setWindowTitle("Error message")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
+        
+        else:
+            folder = Path(f"songs/Album/{self.chosen_name}")
+            folder.mkdir(parents = True, exist_ok = True)
+
+            Path(f"{folder}/song_list").mkdir(parents = True, exist_ok = True)
+            Path(self.chosen_cover).rename(f"{folder}/cover.png") 
+
+            Path(f"{folder}/info.txt").touch() 
+            with open(f"{folder}/info.txt", "a") as f:
+                f.write(json.dumps(dict(Artist =self.chosen_artist)))
+
+            for songs in self.chosen_songs:
+                Path(songs).rename(f"songs/Album/{self.chosen_name}/song_list/{Path(songs).name}")
+            
+            self.close()
+
+        
+    def close(self):
+        self.hide()
+
+            
         
 
 
@@ -159,8 +262,10 @@ class AudioPlayer():
 
 def album_name_clicked(Album_name):
         clear_layout(window.ui.verticalLayout_15)
-
-        window.cd = cd_making(f"songs/Album/{Album_name}/cover")
+        try:
+            window.cd = cd_making(f"songs/Album/{Album_name}/cover")
+        except FileNotFoundError:
+            pass
         show_songs(Album_name)
 
 def cd_making(photo_path): #find a way to make it more efficient -> rotate a widget maybe? / add cache to not regenerate gif every click
@@ -261,4 +366,4 @@ if __name__ == "__main__":
 
 
     window.show()
-    app.exec()
+    sys.exit(app.exec())
