@@ -71,6 +71,7 @@ class MainWindow(QMainWindow):
             self.ui.pushButton_5.setFlat(False)
     
     def change_position_queue(self, displacement):
+        print(displacement, self.audio_player.current_index)
         if self.audio_player.current_index  + displacement < 0:
             displacement = 0
         
@@ -151,6 +152,7 @@ class SongFrame(QWidget):
         self.ui.Album_name.clicked.connect(lambda: self.album_name_clicked(Song_name, Artist, Album))
     
     def album_name_clicked(self, Song_name, Artist, Album): #change this a bit later --> its kinda slowing down other stuff and hogging the way (fixed?)
+        window.audio_player.current_index = window.song_base[Album].index(Song_name)
         window.ui.label_6.setText(f'"{Song_name}" by {Artist}')
         window.audio_player.play((str(f"songs/Album/{Album}/song_list/{Song_name}.mp3")), Song_name, Artist, Album)
         window.song_queue = get_song_list(Album)
@@ -180,10 +182,11 @@ class AudioPlayer():
         self.Album = None
         self.Song = None
         self.Artist = None
+
+        self.current_index = 0
         
         self.audio.setVolume(1) #bc volume should be %
 
-        self.current_index = 0
         self.repeat = False
 
         default_device = QMediaDevices.defaultAudioOutput()
@@ -261,7 +264,7 @@ class AudioPlayer():
         if not window.user_active:
             window.ui.label.setText(f"{(position//1000)//60}:{(position//1000)%60:02d} / {(self.duration//1000)//60}:{(self.duration//1000)%60:02d}")
             window.ui.horizontalSlider_2.setValue(int(position/self.duration * 1000))
-            print(window.ui.horizontalSlider_2.value(), position, self.duration)
+            #print(window.ui.horizontalSlider_2.value(), position, self.duration)
         else:
             self.player.pause()
             #window.ui.label_2.movie.pause()
