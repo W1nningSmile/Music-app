@@ -17,8 +17,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QLabel,
     QLayout, QLineEdit, QMainWindow, QMenuBar,
-    QProgressBar, QPushButton, QScrollArea, QSizePolicy,
-    QSlider, QSpacerItem, QVBoxLayout, QWidget)
+    QPushButton, QScrollArea, QSizePolicy, QSlider,
+    QSpacerItem, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -67,27 +67,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.line)
 
-        self.horizontalLayout_7 = QHBoxLayout()
-        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
-        self.pushButton_2 = QPushButton(self.verticalLayoutWidget)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setMaximumSize(QSize(97, 23))
-
-        self.horizontalLayout_7.addWidget(self.pushButton_2)
-
-        self.pushButton = QPushButton(self.verticalLayoutWidget)
-        self.pushButton.setObjectName(u"pushButton")
-        self.pushButton.setMaximumSize(QSize(96, 23))
-
-        self.horizontalLayout_7.addWidget(self.pushButton)
-
-        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
-
-        self.horizontalLayout_7.addItem(self.horizontalSpacer)
-
-
-        self.verticalLayout.addLayout(self.horizontalLayout_7)
-
         self.horizontalLayout_8 = QHBoxLayout()
         self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
@@ -98,7 +77,7 @@ class Ui_MainWindow(object):
         self.label_5.setObjectName(u"label_5")
         self.label_5.setMinimumSize(QSize(30, 30))
         self.label_5.setMaximumSize(QSize(30, 30))
-        self.label_5.setPixmap(QPixmap(u"image_ressources/magnifying-glass-icon.png"))
+        self.label_5.setPixmap(QPixmap(u"image_ressources\magnifying-glass-icon.png"))
         self.label_5.setScaledContents(True)
 
         self.horizontalLayout_8.addWidget(self.label_5)
@@ -134,9 +113,31 @@ class Ui_MainWindow(object):
 
         self.verticalLayout.addWidget(self.scrollArea)
 
-        self.verticalLayout.setStretch(2, 1)
-        self.verticalLayout.setStretch(3, 2)
-        self.verticalLayout.setStretch(4, 100)
+        self.horizontalLayout_7 = QHBoxLayout()
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout_7.addItem(self.horizontalSpacer)
+
+        self.pushButton_2 = QPushButton(self.verticalLayoutWidget)
+        self.pushButton_2.setObjectName(u"pushButton_2")
+        self.pushButton_2.setMinimumSize(QSize(150, 0))
+        self.pushButton_2.setMaximumSize(QSize(180, 23))
+
+        self.horizontalLayout_7.addWidget(self.pushButton_2)
+
+        self.pushButton = QPushButton(self.verticalLayoutWidget)
+        self.pushButton.setObjectName(u"pushButton")
+        self.pushButton.setMinimumSize(QSize(150, 0))
+        self.pushButton.setMaximumSize(QSize(150, 23))
+
+        self.horizontalLayout_7.addWidget(self.pushButton)
+
+
+        self.verticalLayout.addLayout(self.horizontalLayout_7)
+
+        self.verticalLayout.setStretch(2, 2)
+        self.verticalLayout.setStretch(3, 100)
         self.verticalLayoutWidget_2 = QWidget(self.centralwidget)
         self.verticalLayoutWidget_2.setObjectName(u"verticalLayoutWidget_2")
         self.verticalLayoutWidget_2.setGeometry(QRect(1350, 10, 541, 1051))
@@ -227,13 +228,11 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_14 = QVBoxLayout()
         self.verticalLayout_14.setObjectName(u"verticalLayout_14")
-        self.progressBar = QProgressBar(self.verticalLayoutWidget_3)
-        self.progressBar.setObjectName(u"progressBar")
-        self.progressBar.setValue(24)
-        self.progressBar.setTextVisible(False)
-        self.progressBar.setInvertedAppearance(False)
+        self.horizontalSlider_2 = QSlider(self.verticalLayoutWidget_3)
+        self.horizontalSlider_2.setObjectName(u"horizontalSlider_2")
+        self.horizontalSlider_2.setOrientation(Qt.Horizontal)
 
-        self.verticalLayout_14.addWidget(self.progressBar)
+        self.verticalLayout_14.addWidget(self.horizontalSlider_2)
 
         self.horizontalLayout_9 = QHBoxLayout()
         self.horizontalLayout_9.setObjectName(u"horizontalLayout_9")
@@ -269,7 +268,6 @@ class Ui_MainWindow(object):
 
         self.verticalLayout_14.addItem(self.verticalSpacer_5)
 
-        self.verticalLayout_14.setStretch(0, 100)
 
         self.verticalLayout_9.addLayout(self.verticalLayout_14)
 
@@ -284,7 +282,7 @@ class Ui_MainWindow(object):
         self.label_4.setObjectName(u"label_4")
         self.label_4.setMinimumSize(QSize(40, 40))
         self.label_4.setMaximumSize(QSize(40, 40))
-        self.label_4.setPixmap(QPixmap(u"image_ressources/Speaker_Icon.png"))
+        self.label_4.setPixmap(QPixmap(u"image_ressources\Speaker_Icon.png"))
         self.label_4.setScaledContents(True)
 
         self.horizontalLayout_2.addWidget(self.label_4)
@@ -323,10 +321,10 @@ class Ui_MainWindow(object):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
         self.label_35.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:14pt; font-weight:600;\">Your Library</span></p></body></html>", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"+ Add", None))
-        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"Playlist", None))
-        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Author", None))
         self.label_5.setText("")
-        self.label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:18pt; font-weight:600;\">Songs:</span></p></body></html>", None))
+        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"Modify selected album", None))
+        self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Delete selected album", None))
+        self.label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:18pt; font-weight:600;\">Queue:</span></p></body></html>", None))
         self.label_2.setText("")
         self.label_6.setText(QCoreApplication.translate("MainWindow", u"Song name", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"0:00 / 0:00", None))
