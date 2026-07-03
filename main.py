@@ -3,7 +3,7 @@ import ui.album_widget_template as album_wdiget_template
 import ui.create_album_ui as create_album
 
 from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox
-from PySide6.QtGui import QPixmap, QMovie
+from PySide6.QtGui import QPixmap, QMovie, QFont
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtCore import QUrl
 
@@ -34,6 +34,9 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_6.clicked.connect(lambda: self.change_position_queue(1))
         self.ui.pushButton_8.clicked.connect(lambda: self.change_position_queue(-1))
         self.ui.pushButton_5.clicked.connect(self.repeat)
+
+        self.ui.label_3.setText(f"Queue: ")
+        self.ui.label_3.setFont(QFont("MS Shell Dlg 2", 16))
 
         #self.ui.lineEdit.returnPressed.connect(self.album_search) #works by pressing enter
         self.ui.lineEdit.textEdited.connect(self.album_search) #works by just typing (no need to press anything) <-- lowkey better icl
@@ -199,8 +202,14 @@ class AudioPlayer():
 
             if self.repeat:
                 displacement = 0
-
-            self.Song = arr[self.current_index+displacement]
+            
+            try:
+                self.Song = arr[self.current_index+displacement]
+            except IndexError:
+                print("index error")
+                self.player.stop()
+                window.ui.label_2.movie.stop()
+                return
 
             window.ui.label_6.setText(f'"{self.Song}" by {self.Artist}') #should i just display the song name?
             self.play(Path(str(f"songs/Album/{self.Album}/song_list/{self.Song}.mp3")), self.Song, self.Artist, self.Album, False)
@@ -381,6 +390,7 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
 
 
 def album_name_clicked(Album_name):
+        window.ui.label_3.setText(f"Queue: {Album_name}")
         clear_layout(window.ui.verticalLayout_15)
         if not Path(f"songs\Album\{Album_name}\disc.png").exists():
             try:
