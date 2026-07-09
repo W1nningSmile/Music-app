@@ -119,12 +119,6 @@ class Ui_MainWindow(object):
 
         self.horizontalLayout_7.addItem(self.horizontalSpacer)
 
-        self.pushButton_2 = QPushButton(self.verticalLayoutWidget)
-        self.pushButton_2.setObjectName(u"pushButton_2")
-        self.pushButton_2.setMinimumSize(QSize(150, 0))
-        self.pushButton_2.setMaximumSize(QSize(180, 23))
-
-        self.horizontalLayout_7.addWidget(self.pushButton_2)
 
         self.pushButton = QPushButton(self.verticalLayoutWidget)
         self.pushButton.setObjectName(u"pushButton")
@@ -322,7 +316,6 @@ class Ui_MainWindow(object):
         self.label_35.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:14pt; font-weight:600;\">Your Library</span></p></body></html>", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"+ Add", None))
         self.label_5.setText("")
-        self.pushButton_2.setText(QCoreApplication.translate("MainWindow", u"Modify selected album", None))
         self.pushButton.setText(QCoreApplication.translate("MainWindow", u"Delete selected album", None))
         self.label_3.setText(QCoreApplication.translate("MainWindow", u"<html><head/><body><p><span style=\" font-size:18pt; font-weight:600;\">Queue:</span></p></body></html>", None))
         self.label_2.setText("")
