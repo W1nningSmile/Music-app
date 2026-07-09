@@ -2,16 +2,18 @@ import ui.main_page_ui as main_page_ui
 import ui.album_widget_template as album_wdiget_template
 import ui.create_album_ui as create_album
 
-from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox
+from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy
 from PySide6.QtGui import QPixmap, QMovie, QFont
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtCore import QUrl
 
 import sys
 import json
+from random import shuffle
 
 from pathlib import Path
 from PIL import Image, ImageOps #PIL = Pillow
+import shutil
 
 
 
@@ -25,6 +27,8 @@ class MainWindow(QMainWindow):
 
         self.saving_pannel_state = None
         self.album_frame = {}
+
+        self.selected_album = None
         
 
         self.ui.label_2.setPixmap(QPixmap("image_ressources/default_cover"))
@@ -54,13 +58,29 @@ class MainWindow(QMainWindow):
         self.ui.horizontalSlider_2.sliderPressed.connect(lambda: self.user_activity_state())
         self.ui.horizontalSlider_2.setValue(0)
 
-        self.song_queue = []
+        self.ui.pushButton_4.clicked.connect(self.shuffle)
+
+        self.ui.pushButton.clicked.connect(self.delete_album) #delete album
+
+        self.song_queue = [] #not needed?
         self.current_song_index = 0
 
-        self.song_base = dict()
+        self.song_base = dict() #list of all songs downloaded
         
         #anything under here wont load until an album has been selected
         self.ui.pushButton_7.clicked.connect(lambda: self.audio_player.start_stop())
+    
+    def modify_album(self):
+        pass
+
+    def delete_album(self):
+        # self.audio_player.Album <-- current album playing
+        if self.selected_album:
+            shutil.rmtree(Path(f"songs/Album/{self.selected_album}"))
+        clear_layout(window.ui.verticalLayout_13)
+        show_albums(True)
+        self.ui.verticalLayout_13.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+
     
     def repeat(self):
         if not self.audio_player.repeat:
@@ -69,6 +89,21 @@ class MainWindow(QMainWindow):
         else: 
             self.audio_player.repeat = False
             self.ui.pushButton_5.setFlat(False)
+    
+    def shuffle(self): #arr = window.song_base[self.Album]
+        try:
+            shuffle(self.audio_player.queue)
+            window.audio_player.current_index = -1 #index = -1 or else it will also count the current song playing as being part of the new queue
+            print(self.audio_player.queue)
+        except AttributeError:
+            msg = QMessageBox()
+            msg.setIcon(QMessageBox.Icon.Warning)
+            msg.setText("Can't shuffle the album or playlist because there isnt anything eligible selected to shuffle.")
+            msg.setWindowTitle("Warning")
+            msg.setStandardButtons(QMessageBox.StandardButton.Ok)
+            msg.exec()
+
+
     
     def change_position_queue(self, displacement):
         print(displacement, self.audio_player.current_index)
@@ -125,6 +160,8 @@ class AlbumFrame(QWidget):
         self.setMinimumHeight(80)
         self.setMinimumWidth(420)
 
+        self.Album = Album_name
+
         #can modify stuff now
         self.ui.Album_name.setText(Album_name)
         self.ui.Artist_name.setText(Artist)
@@ -154,7 +191,9 @@ class SongFrame(QWidget):
     def album_name_clicked(self, Song_name, Artist, Album): #change this a bit later --> its kinda slowing down other stuff and hogging the way (fixed?)
         window.audio_player.current_index = window.song_base[Album].index(Song_name)
         window.ui.label_6.setText(f'"{Song_name}" by {Artist}')
-        window.audio_player.play((str(f"songs/Album/{Album}/song_list/{Song_name}.mp3")), Song_name, Artist, Album)
+        for item in ["mp3", "FLAC", "WAV"]:
+            if Path(str(f"songs/Album/{Album}/song_list/{Song_name}.{item}")).exists():
+                        window.audio_player.play((str(f"songs/Album/{Album}/song_list/{Song_name}.{item}")), Song_name, Artist, Album)
         window.song_queue = get_song_list(Album)
         window.current_song_index = window.song_queue.index(Song_name)
         print(f"song queue: {window.song_queue} and index {window.current_song_index} which is '{window.song_queue[window.current_song_index]}'")
@@ -201,13 +240,12 @@ class AudioPlayer():
         if status == QMediaPlayer.EndOfMedia or status == "signal":
             print(f"song: '{self.Song}' ended", self.Album)
             print(self.current_index)
-            arr = window.song_base[self.Album]
 
             if self.repeat:
                 displacement = 0
             
             try:
-                self.Song = arr[self.current_index+displacement]
+                self.Song = self.queue[self.current_index+displacement] #self.queue = window.song_base[self.Album]
             except IndexError:
                 print("index error")
                 self.player.stop()
@@ -215,7 +253,10 @@ class AudioPlayer():
                 return
 
             window.ui.label_6.setText(f'"{self.Song}" by {self.Artist}') #should i just display the song name?
-            self.play(Path(str(f"songs/Album/{self.Album}/song_list/{self.Song}.mp3")), self.Song, self.Artist, self.Album, False)
+
+            for item in ["mp3", "FLAC", "WAV"]:
+                if Path(str(f"songs/Album/{self.Album}/song_list/{self.Song}.{item}")).exists():
+                    self.play(Path(str(f"songs/Album/{self.Album}/song_list/{self.Song}.{item}")), self.Song, self.Artist, self.Album, False)
             self.current_index = window.song_base[self.Album].index(self.Song)
 
 
@@ -227,10 +268,13 @@ class AudioPlayer():
         self.Artist = Artist
         path = Path(Source).resolve()
         print(f"the path is {path}")
+        
+        self.queue = window.song_base[self.Album]
+        #print(type(self.queue))
 
         if not path.exists():
             print("Error: Audio file could not be found")
-            msg = QMessageBox
+            msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Critical)
             msg.setText("Audio file could not be found")
             msg.setWindowTitle("Error")
@@ -301,7 +345,7 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
         self.chosen_name = None
         self.chosen_artist = None
         self.chosen_songs = None
-        self.chosen_cover = None
+        self.chosen_cover = "image_ressources\default_cover.jpg"
 
         self.ui.textEdit.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106)) #character count > 106 will make it hard to read :/
         self.ui.textEdit_2.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106))
@@ -323,7 +367,7 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
         file_name, _ = QFileDialog.getOpenFileName(
             parent=None,
             caption = caption_,
-            filter="Image Files (*.png)" #add more filters later and turn them all to png
+            filter="Image Files (*.png *.jpg)" #add more filters later and turn them all to png
         )
         if file_name:
             self.chosen_cover = file_name
@@ -336,7 +380,7 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
         file_name, _ = QFileDialog.getOpenFileNames(
             parent=None,
             caption = caption_,
-            filter="Image Files (*.mp3)" #add more filters later and turn them all to png
+            filter="Image Files (*.mp3 *.FLAC *.WAV)" #add more filters later and turn them all to png
         )
         if file_name:
             self.chosen_songs = file_name
@@ -365,14 +409,16 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
             folder.mkdir(parents = True, exist_ok = True)
 
             Path(f"{folder}/song_list").mkdir(parents = True, exist_ok = True)
-            Path(self.chosen_cover).rename(f"{folder}/cover.png") 
+            #Path(self.chosen_cover).rename(f"{folder}/cover.png") 
+            shutil.copy(self.chosen_cover, f"{folder}/cover.png")
 
             Path(f"{folder}/info.txt").touch() 
-            with open(f"{folder}/info.txt", "a") as f:
+            with open(f"{folder}/info.txt", "w") as f:
                 f.write(json.dumps(dict(Artist =self.chosen_artist)))
 
             for songs in self.chosen_songs:
-                Path(songs).rename(f"songs/Album/{self.chosen_name}/song_list/{Path(songs).name}")
+                #Path(songs).rename(f"songs/Album/{self.chosen_name}/song_list/{Path(songs).name}")
+                shutil.copy(songs, f"songs/Album/{self.chosen_name}/song_list/{Path(songs).name}")
 
             #gif saving <-- leave this always at end bc it will freeze the app for 1-2 seconds
             self.cd = cd_making(self.chosen_name) #f"songs\Album\{self.chosen_name}\cover.jpg"
@@ -394,8 +440,9 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
 
 def album_name_clicked(Album_name):
         window.ui.label_3.setText(f"Queue: {Album_name}")
+        window.selected_album = Album_name
         clear_layout(window.ui.verticalLayout_15)
-        if not Path(f"songs\Album\{Album_name}\disc.png").exists():
+        if not Path(f"songs/Album/{Album_name}/disc.png").exists():
             try:
                 cd_making(Album_name)
             except FileNotFoundError:
@@ -403,13 +450,13 @@ def album_name_clicked(Album_name):
         show_songs(Album_name)
 
 def cd_making(Album): #find a way to make it more efficient -> rotate a widget maybe? / add cache to not regenerate gif every click
-    template_path = "cd_images/template.png" #move the cd png and gif to be generated automatically when user adds a new album -> easier on script when using it
-    output_path = f"songs\Album\{Album}\disc.png"
+    template_path = "image_ressources/template.png" #move the cd png and gif to be generated automatically when user adds a new album -> easier on script when using it
+    output_path = f"songs/Album/{Album}/disc.png"
 
 
     template = Image.open(template_path).convert("RGBA")
     for ext in [".png", ".jpg"]:
-        fodder = Path(f"songs\Album\{Album}\cover").with_suffix(ext)
+        fodder = Path(f"songs/Album/{Album}/cover").with_suffix(ext)
         if fodder.exists():
             break
     photo = Image.open(fodder).convert("RGBA")
@@ -434,7 +481,7 @@ def cd_gif_making(final_disc, Album):
         frames.append(rotated_frame.convert("P", palette=Image.Palette.ADAPTIVE)) #aparently makes the gif size tiny while barely sacrificing quality
 
     frames[0].save(
-        f"songs\Album\{Album}\disc_gif.gif", #gif output path
+        f"songs/Album/{Album}/disc_gif.gif", #gif output path
         save_all = True,
         append_images=frames[1:], #dont take frame 0 or else we will have 2 at angle 0
         duration =45,
@@ -457,9 +504,14 @@ def show_songs(album):
 
     for i in range(len(song_list)):
         window.ui.verticalLayout_15.insertWidget(i, SongFrame(song_list[i], album_info(album)["Artist"], Path(f"songs/Album/{album}/cover"), album))
+    window.ui.verticalLayout_15.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
     
     if not window.audio_player.player.source().isValid(): #checks if there is any media playing on qmediaplayer rn --> isPlaying() only checked if it was currently running (pausing meant that it wasnt running)
-        window.ui.label_2.setPixmap(QPixmap(f"songs\Album\{album}\disc.png"))
+        if Path(f"songs/Album/{album}/disc.png").exists():
+            path_temp = f"songs/Album/{album}/disc.png"
+        else: 
+            path_temp = "image_ressources/default_cover.jpg"
+        window.ui.label_2.setPixmap(QPixmap(path_temp))
     
     print(window.song_queue)
 def get_song_list(album):
@@ -506,10 +558,13 @@ def show_albums(condition = True, Album = None): #make dictionnary here --> make
             window.ui.verticalLayout_13.insertWidget(window.ui.verticalLayout_13.count()-1, frame)
         
         for i in window.song_base.keys():
-            window.song_base[i] = list(item.stem for item in Path(f"songs/Album/{i}/song_list").iterdir()) #now song_base has a dictionnary with every song 
+            try:
+                window.song_base[i] = list(item.stem for item in Path(f"songs/Album/{i}/song_list").iterdir()) #now song_base has a dictionnary with every song 
+            except FileNotFoundError:
+                pass
         print("the song base is \n",window.song_base)
     else:
-        path = Path(f"songs/Album/{Album}").iterdir()
+        item = Path(f"songs/Album/{Album}")
         window.song_base[Album] = list(item.stem for item in Path(f"songs/Album/{Album}/song_list").iterdir())
         frame = albums(item.stem, album_info(item.stem)["Artist"], f"{item}/cover").create_AlbumFrame()
         window.album_frame[item.stem] = frame
