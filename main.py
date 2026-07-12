@@ -14,6 +14,7 @@ from random import shuffle
 from pathlib import Path
 from PIL import Image, ImageOps #PIL = Pillow
 import shutil
+import gc
 
 
 
@@ -29,7 +30,7 @@ class MainWindow(QMainWindow):
         self.album_frame = {}
 
         self.selected_album = None
-        
+        self.current_movie = None
 
         self.ui.label_2.setPixmap(QPixmap("image_ressources/default_cover"))
 
@@ -38,9 +39,6 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_6.clicked.connect(lambda: self.change_position_queue(1))
         self.ui.pushButton_8.clicked.connect(lambda: self.change_position_queue(-1))
         self.ui.pushButton_5.clicked.connect(self.repeat)
-
-        self.ui.label_3.setText(f"Queue: ")
-        self.ui.label_3.setFont(QFont("MS Shell Dlg 2", 16))
 
         #self.ui.lineEdit.returnPressed.connect(self.album_search) #works by pressing enter
         self.ui.lineEdit.textEdited.connect(self.album_search) #works by just typing (no need to press anything) <-- lowkey better icl
@@ -70,15 +68,51 @@ class MainWindow(QMainWindow):
         #anything under here wont load until an album has been selected
         self.ui.pushButton_7.clicked.connect(lambda: self.audio_player.start_stop())
     
-    def modify_album(self):
-        pass
+    def release_media(self):
+        if self.current_movie:
+            self.current_movie.stop()
+            self.current_movie = None
+            self.ui.label_2.clear()
+        
+        self.audio_player.player.stop()
+        self.audio_player.player.setSource(QUrl(""))
 
-    def delete_album(self):
+        QApplication.processEvents()
+        gc.collect()
+
+    def delete_album(self): #fix this (bug where you cant delete an album if its already playing or been played?)
+        print(self.current_movie)
         # self.audio_player.Album <-- current album playing
-        if self.selected_album:
-            shutil.rmtree(Path(f"songs/Album/{self.selected_album}"))
+        if not self.selected_album:
+            return
+        
+        album_path = Path(f"songs/Album/{self.selected_album}")
+
+        if not album_path.exists():
+            return
+        
+        self.release_media()
+
+        if Path("temp_delete.txt").exists():
+            with open("temp_delete.txt", "a") as f:
+                f.write(f"{self.selected_album}\n")       
+        else:
+            with open("temp_delete.txt", "w") as f:
+                pass 
+
+        
         clear_layout(window.ui.verticalLayout_13)
-        show_albums(True)
+        self.album_frame.pop(self.selected_album, None)
+        self.song_base.pop(self.selected_album, None)
+
+        for album in self.song_base.keys():
+            print(f"the album is {album}")
+            frame = albums(album, album_info(album)["Artist"], (f"songs/Album/{album}/cover")).create_AlbumFrame()
+            self.album_frame[album] = frame      #key = album name | value = [album name, Artist name, location of cover image]
+            self.ui.verticalLayout_13.insertWidget(self.ui.verticalLayout_13.count()-1, frame)
+        print("song base: ", self.song_base.keys())
+        print("the song base is \n",self.song_base)
+
         self.ui.verticalLayout_13.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
     
@@ -131,6 +165,8 @@ class MainWindow(QMainWindow):
     def album_search(self):
         search = self.ui.lineEdit.text()
         for key, item in self.album_frame.items(): #adding 2 variables in the for  loop bc .items() returns 2 values <-- lowkey forgot abt being able to do this
+
+            print(self.song_base)
             if len(key) < len(search): #otherwise it will make an index error
                 key = key + " "
             if search.lower() != key[:len(search)].lower():
@@ -281,6 +317,7 @@ class AudioPlayer():
             msg.setStandardButtons(QMessageBox.StandardButton.Ok)
             msg.exec()
         
+        
         self.player.setSource(QUrl.fromLocalFile(path)) 
         self.player.play()
 
@@ -296,9 +333,16 @@ class AudioPlayer():
         window.ui.horizontalSlider_2.setValue(0)
         
         if cond:
-            window.ui.label_2.movie = QMovie(f"songs/Album/{Album}/disc_gif.gif")
-            window.ui.label_2.setMovie(window.ui.label_2.movie)
-            window.ui.label_2.movie.start()
+            if window.current_movie:
+                window.current_movie.stop()
+                window.current_movie = None
+                window.ui.label_2.clear()
+
+                QApplication.processEvents()
+
+            window.current_movie = QMovie(f"songs/Album/{Album}/disc_gif.gif")
+            window.ui.label_2.setMovie(window.current_movie)
+            window.current_movie.start()
     
     def get_duration(self, media_duration):
         self.duration = media_duration #in milisec
@@ -345,7 +389,7 @@ class saving_pannel(QDialog): #dont forget to add the disk cover and gif gen her
         self.chosen_name = None
         self.chosen_artist = None
         self.chosen_songs = None
-        self.chosen_cover = "image_ressources\default_cover.jpg"
+        self.chosen_cover = "image_ressources/default_cover.jpg"
 
         self.ui.textEdit.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106)) #character count > 106 will make it hard to read :/
         self.ui.textEdit_2.textChanged.connect(lambda: self.character_limit(self.ui.textEdit.toPlainText(), 106))
@@ -471,6 +515,9 @@ def cd_making(Album): #find a way to make it more efficient -> rotate a widget m
     final_disc.save(output_path, "PNG")
     print(f"Saving to {output_path} succeeded")
 
+    template.close()
+    photo.close()
+
     return final_disc
 
 def cd_gif_making(final_disc, Album):
@@ -489,6 +536,9 @@ def cd_gif_making(final_disc, Album):
         optimize = True,
         disposal=2 #clears previous frames 
     )
+
+    for frame in frames:
+        frame.close()
 
 
 
@@ -530,24 +580,7 @@ def clear_layout(layout):
         if item.widget():
             item.widget().deleteLater()
 
-#def show_albums(condition = False): #make dictionnary here --> make super efficient for the fucks of it
-#    clear_layout(window.ui.verticalLayout_13)
-#    window.ui.verticalLayout_13.addStretch()
-#    songs = []
-#    album_list = dict()
-#
-#    for item in Path("songs/Album/").iterdir():
-#        album_list[item.stem] = None
-#        songs.append(albums(item.stem, album_info(item.stem)["Artist"], f"{item}/cover"))
-#    
-#    if condition:
-#        pass
-#    elif not condition:
-#        window.song_base = album_list
-#    
-#    for i in range(len(songs)):
-#        window.ui.verticalLayout_13.insertWidget(i, songs[i].create_AlbumFrame())
-#        pass
+
 
 def show_albums(condition = True, Album = None): #make dictionnary here --> make super efficient for the fucks of it (maybe add a refresh button later to bypass this system?)
     if condition:
@@ -570,12 +603,33 @@ def show_albums(condition = True, Album = None): #make dictionnary here --> make
         window.album_frame[item.stem] = frame
         window.ui.verticalLayout_13.insertWidget(window.ui.verticalLayout_13.count()-1, frame)
         print("the song base is \n",window.song_base)
+
+def clean_up_temp():
+    with open("temp_delete", "r") as f:
+        while True:
+            line = f.readline()
+            if not line:
+                break
+
+            print(line.strip()) #.strip() remove the \n at the end of each line
+            
+            if Path(f"songs/Album/{line.strip()}").exists():
+                try:
+                    shutil.rmtree(f"songs/Album/{line.strip()}")
+                except FileNotFoundError:
+                    pass
+            else:
+                pass
+    
+    with open("temp_delete", "w") as f:
+        pass
         
 
 
 
 
 if __name__ == "__main__":
+    clean_up_temp()
     app = QApplication(sys.argv)
 
     window  = MainWindow()
