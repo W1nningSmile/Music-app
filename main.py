@@ -1,11 +1,11 @@
-import ui.main_page_ui as main_page_ui
-import ui.album_widget_template as album_wdiget_template
+import ui.main_page_1400x800 as main_page_ui
+import ui.album_frame_1400x800 as album_wdiget_template
 import ui.create_album_ui as create_album
 
 from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy
-from PySide6.QtGui import QPixmap, QMovie
+from PySide6.QtGui import QPixmap, QMovie, QFont
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
-from PySide6.QtCore import QUrl
+from PySide6.QtCore import QUrl, QTimer
 
 import sys
 import json
@@ -26,9 +26,10 @@ class MainWindow(QMainWindow):
 
         self.ui = main_page_ui.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setFixedSize(self.size())
+        self.setFixedSize(1400, 800)
 
         self.saving_pannel_state = None
+
         self.album_frame = {}
 
         self.selected_album = None
@@ -64,11 +65,30 @@ class MainWindow(QMainWindow):
 
         self.song_queue = [] #not needed?
         self.current_song_index = 0
+        self.artist_search_state = 0
 
         self.song_base = dict() #list of all songs downloaded
+        self.artist_base = dict()
         
         #anything under here wont load until an album has been selected
         self.ui.pushButton_7.clicked.connect(lambda: self.audio_player.start_stop())
+    
+    def artist_search(self, artist):
+        #print(self.album_frame)
+        if not self.artist_search_state%2:
+            for key, value in self.artist_base.items():
+                #print(key, value)
+                if value != artist:
+                    self.album_frame[key].hide()
+        else: 
+            for key, value in self.artist_base.items():
+                #print(key, value)
+                if value != artist:
+                    self.album_frame[key].show()
+
+        self.artist_search_state+=1
+
+
     
     def release_media(self):
         if self.current_movie:
@@ -102,16 +122,17 @@ class MainWindow(QMainWindow):
                 pass 
 
         
-        clear_layout(self.ui.verticalLayout_13)
+        clear_layout(self.ui.verticalLayout_16)
         self.album_frame.pop(self.selected_album, None)
         self.song_base.pop(self.selected_album, None)
+        self.artist_base.pop(self.selected_album, None)
 
         for album in self.song_base.keys():
-            frame = albums(album, album_info(album)["Artist"], (f"songs/Album/{album}/cover")).create_AlbumFrame()
+            frame = Album(album, album_info(album)["Artist"], (f"songs/Album/{album}/cover")).create_AlbumFrame()
             self.album_frame[album] = frame      #key = album name | value = [album name, Artist name, location of cover image]
-            self.ui.verticalLayout_13.insertWidget(self.ui.verticalLayout_13.count()-1, frame)
+            self.ui.verticalLayout_16.insertWidget(self.ui.verticalLayout_16.count()-1, frame)
 
-        self.ui.verticalLayout_13.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        self.ui.verticalLayout_16.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
 
     
     def repeat(self):
@@ -124,8 +145,17 @@ class MainWindow(QMainWindow):
     
     def shuffle(self): #arr = window.song_base[self.Album]
         try:
-            shuffle(self.audio_player.queue)
-            self.audio_player.current_index = -1 #index = -1 or else it will also count the current song playing as being part of the new queue
+            if not self.ui.pushButton_4.isFlat():
+                shuffle(self.audio_player.queue)
+                self.audio_player.current_index = -1 #index = -1 or else it will also count the current song playing as being part of the new queue
+                self.ui.pushButton_4.setFlat(True)
+            else: 
+                self.audio_player.queue = get_song_list(self.selected_album)
+                self.ui.pushButton_4.setFlat(False)
+            
+            print(self.audio_player.queue)
+
+            
         except AttributeError:
             msg = QMessageBox()
             msg.setIcon(QMessageBox.Icon.Warning)
@@ -149,11 +179,11 @@ class MainWindow(QMainWindow):
         self.audio_player.change_music_position(self.ui.horizontalSlider_2.value())
         self.user_active = False
         self.audio_player.player.play()
-        self.window.current_movie.movie.setPaused(False)
+        self.current_movie.setPaused(False)
     
     def user_activity_state(self):
         self.audio_player.player.pause()
-        self.window.current_movie.setPaused(True)
+        self.current_movie.setPaused(True)
         self.user_active = True
     
     def album_search(self):
@@ -178,7 +208,7 @@ class MainWindow(QMainWindow):
 
 
 class AlbumFrame(QWidget):
-    def __init__(self, album_name, artist, icon, parent=None):
+    def __init__(self, album_name, artist, icon, type = 0, parent=None):
         super().__init__(parent)
 
         #importing the ui
@@ -191,12 +221,44 @@ class AlbumFrame(QWidget):
         self.Album = album_name
 
         #can modify stuff now
-        self.ui.Album_name.setText(album_name)
-        self.ui.Artist_name.setText(artist)
-        self.ui.Album_icon.setPixmap(QPixmap(icon))
+        if not type:
+            self.ui.Album_name.setText(album_name)
+            self.ui.Artist_name.setText(artist)
+            self.ui.Album_icon.setPixmap(QPixmap(icon))
 
-        self.Album_name = album_name
-        self.ui.Album_name.clicked.connect(lambda: album_name_clicked(album_name))
+            self.Album_name = album_name
+            self.ui.Album_name.clicked.connect(lambda: album_name_clicked(album_name))
+            self.ui.Artist_name.clicked.connect(lambda: window.artist_search(artist))
+        else:
+            self.ui.Album_name.setText(album_name)
+            self.ui.Artist_name.setText(artist)
+            self.ui.Album_icon.setPixmap(QPixmap(icon))
+
+            self.ui.Album_name.setStyleSheet("""
+                QPushButton {
+                    border: none;
+                    background: transparent;
+                    color: palette(window-text);
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                }
+            """)
+
+            self.ui.Artist_name.setStyleSheet("""
+                QPushButton {
+                    border: none;
+                    background: transparent;
+                    color: palette(window-text);
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                }
+            """)
+
+            self.Album_name = album_name
+            self.ui.Album_name.clicked.connect(lambda: album_name_clicked(album_name))
+
     
 class SongFrame(QWidget):
     def __init__(self, window, song_name, Artist, Icon, Album, parent=None):
@@ -214,6 +276,27 @@ class SongFrame(QWidget):
         self.ui.Album_name.setText(song_name)
         self.ui.Artist_name.setText(f"{Album} by {Artist}")
         self.ui.Album_icon.setPixmap(QPixmap(Icon))
+
+        self.ui.Album_name.setStyleSheet("""
+                QPushButton {
+                    border: none;
+                    color: palette(window-text);
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                }
+            """)
+        
+        self.ui.Artist_name.setStyleSheet("""
+                QPushButton {
+                    border: none;
+                    background: transparent;
+                    color: palette(window-text);
+                    text-align: center;
+                    margin: 0;
+                    padding: 0;
+                }
+            """)
         
         self.ui.Album_name.clicked.connect(lambda: self.album_name_clicked(song_name, Artist, Album))
     
@@ -227,16 +310,17 @@ class SongFrame(QWidget):
         self.window.current_song_index = get_song_list(album).index(song_name)
 
 class Album():
-    def __init__(self, name="Album", artist= "Artist", icon="image_ressources/default_cover"):
+    def __init__(self, name="Album", artist= "Artist", icon="image_ressources/default_cover", type = 0):
         self.name = name
         self.artist = artist
+        self.type = type
         if Path(icon+".png").exists() or Path(icon+".jpg").exists():
             self.icon = icon
         else: 
             self.icon = "image_ressources/default_cover"
     
     def create_AlbumFrame(self):
-        return AlbumFrame(self.name, self.artist, self.icon)
+        return AlbumFrame(self.name, self.artist, self.icon, self.type)
 
 class AudioPlayer():
     def __init__(self, window):
@@ -294,7 +378,12 @@ class AudioPlayer():
         self.artist = artist
         path = Path(source).resolve()
         
-        self.queue = self.window.song_base[self.album]
+        self.queue = self.window.song_base[self.album] 
+
+        try: 
+            self.timer.stop()
+        except AttributeError:
+            pass
 
         if not path.exists():
             msg = QMessageBox()
@@ -327,7 +416,36 @@ class AudioPlayer():
             self.window.current_movie = QMovie(f"songs/Album/{self.album}/disc_gif.gif")
             self.window.ui.label_2.setMovie(self.window.current_movie)
             self.window.current_movie.start()
+        
+        self.visible = 40
+        self.count = 0
+        self.txt, self.txt_len = self.get_name_len()
+
+        if self.txt_len: 
+            self.timer = QTimer()
+            self.timer.timeout.connect(lambda: self.change_position_txt())
+            self.timer.start(70)
     
+    def change_position_txt(self): # <-- make an animation instead?
+        visible = self.visible
+
+        scroll = "     " + self.txt + "           " + self.txt
+
+        self.window.ui.label_6.setText(scroll[self.count:self.count+visible])
+
+        self.count +=1
+
+        if self.count >= len(self.txt ) +10:
+            self.count = 0
+    
+    def get_name_len(self):
+        txt = self.window.ui.label_6.text()
+        txt_len = len(txt)
+        
+        if txt_len > self.visible:
+            return txt, txt_len 
+        return None, None
+
     def get_duration(self, media_duration):
         self.duration = media_duration #in milisec
 
@@ -470,8 +588,15 @@ class SavingPannel(QDialog): #dont forget to add the disk cover and gif gen here
 
 def album_name_clicked(album_name):
         window.ui.label_3.setText(f"Queue: {album_name}")
+
+        current_font = window.ui.label_3.font()
+        current_font.setPointSize(18)
+        current_font.setBold(0)
+
+        window.ui.label_3.setFont(current_font)
+
         window.selected_album = album_name
-        clear_layout(window.ui.verticalLayout_15)
+        clear_layout(window.ui.verticalLayout_19)
         if not Path(f"songs/Album/{album_name}/disc.png").exists():
             try:
                 cd_making(album_name)
@@ -540,8 +665,8 @@ def show_songs(album):
     song_list = get_song_list(album)
 
     for i in range(len(song_list)):
-        window.ui.verticalLayout_15.insertWidget(i, SongFrame(window, song_list[i], album_info(album)["Artist"], Path(f"songs/Album/{album}/cover"), album))
-    window.ui.verticalLayout_15.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
+        window.ui.verticalLayout_19.insertWidget(i, SongFrame(window, song_list[i], album_info(album)["Artist"], Path(f"songs/Album/{album}/cover"), album))
+    window.ui.verticalLayout_19.addItem(QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding))
     
     if not window.audio_player.player.source().isValid(): #checks if there is any media playing on qmediaplayer rn --> isPlaying() only checked if it was currently running (pausing meant that it wasnt running)
         if Path(f"songs/Album/{album}/disc.png").exists():
@@ -570,10 +695,14 @@ def clear_layout(layout):
 def show_albums(condition = True, album = None): #make dictionnary here --> make super efficient for the fucks of it (maybe add a refresh button later to bypass this system?)
     if condition:
         for item in Path("songs/Album/").iterdir():
+            artist= album_info(item.stem)["Artist"]
+
             window.song_base[item.stem] = None
-            frame = Album(item.stem, album_info(item.stem)["Artist"], f"{item}/cover").create_AlbumFrame()
+            window.artist_base[item.stem] = artist
+
+            frame = Album(item.stem, artist, f"{item}/cover").create_AlbumFrame()
             window.album_frame[item.stem] = frame      #key = album name | value = [album name, Artist name, location of cover image]
-            window.ui.verticalLayout_13.insertWidget(window.ui.verticalLayout_13.count()-1, frame)
+            window.ui.verticalLayout_16.insertWidget(window.ui.verticalLayout_16.count()-1, frame)
         
         for i in window.song_base.keys():
             try:
@@ -585,7 +714,7 @@ def show_albums(condition = True, album = None): #make dictionnary here --> make
         window.song_base[album] = list(item.stem for item in Path(f"songs/Album/{album}/song_list").iterdir())
         frame = Album(item.stem, album_info(item.stem)["Artist"], f"{item}/cover").create_AlbumFrame()
         window.album_frame[item.stem] = frame
-        window.ui.verticalLayout_13.insertWidget(window.ui.verticalLayout_13.count()-1, frame)
+        window.ui.verticalLayout_16.insertWidget(window.ui.verticalLayout_16.count()-1, frame)
 
 def clean_up_temp():
     try:
@@ -615,11 +744,6 @@ def start_up_check():
     for folder in config.REQUIRED_FOLDERS:
         if not folder.exists():
             folder.mkdir(parents=True, exist_ok=True)
-
-    #checks files
-    for file in config.REQUIRED_FILES:
-        if not file.exists():
-            missing.append(str(file))
     
     if len(missing):
         txt = "- {f}\n"

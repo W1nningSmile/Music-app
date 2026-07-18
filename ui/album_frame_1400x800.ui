@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>430</width>
+    <width>432</width>
     <height>77</height>
    </rect>
   </property>
@@ -18,7 +18,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>430</width>
+     <width>431</width>
      <height>76</height>
     </rect>
    </property>
@@ -42,7 +42,7 @@
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>381</width>
+      <width>407</width>
       <height>56</height>
      </rect>
     </property>
@@ -87,13 +87,13 @@
         <widget class="QPushButton" name="Album_name">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>350</width>
            <height>23</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>400</width>
+           <width>350</width>
            <height>23</height>
           </size>
          </property>
@@ -124,13 +124,13 @@
         <widget class="QPushButton" name="Artist_name">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>350</width>
            <height>23</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>400</width>
+           <width>350</width>
            <height>23</height>
           </size>
          </property>

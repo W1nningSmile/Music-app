@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>430</width>
+    <width>519</width>
     <height>77</height>
    </rect>
   </property>
@@ -18,13 +18,13 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>430</width>
+     <width>519</width>
      <height>76</height>
     </rect>
    </property>
    <property name="minimumSize">
     <size>
-     <width>300</width>
+     <width>500</width>
      <height>76</height>
     </size>
    </property>
@@ -37,12 +37,12 @@
    <property name="frameShadow">
     <enum>QFrame::Raised</enum>
    </property>
-   <widget class="QWidget" name="layoutWidget_4">
+   <widget class="QWidget" name="layoutWidget_2">
     <property name="geometry">
      <rect>
       <x>10</x>
       <y>10</y>
-      <width>381</width>
+      <width>501</width>
       <height>56</height>
      </rect>
     </property>
@@ -80,20 +80,17 @@
      </item>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_16">
-       <property name="spacing">
-        <number>6</number>
-       </property>
        <item>
         <widget class="QPushButton" name="Album_name">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>444</width>
            <height>23</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>400</width>
+           <width>444</width>
            <height>23</height>
           </size>
          </property>
@@ -124,13 +121,13 @@
         <widget class="QPushButton" name="Artist_name">
          <property name="minimumSize">
           <size>
-           <width>200</width>
+           <width>444</width>
            <height>23</height>
           </size>
          </property>
          <property name="maximumSize">
           <size>
-           <width>400</width>
+           <width>444</width>
            <height>23</height>
           </size>
          </property>

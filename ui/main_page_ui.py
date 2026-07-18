@@ -142,6 +142,8 @@ class Ui_MainWindow(object):
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.label_3 = QLabel(self.verticalLayoutWidget_2)
         self.label_3.setObjectName(u"label_3")
+        self.label_3.setText(f"Queue: ")
+        self.label_3.setFont(QFont("MS Shell Dlg 2", 16))
 
         self.horizontalLayout.addWidget(self.label_3)
 
