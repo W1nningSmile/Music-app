@@ -1,0 +1,38 @@
+import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QCheckBox, QVBoxLayout, QWidget
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+        self.setWindowTitle("PySide6 CheckBox Example")
+
+        # 1. Initialize the checkbox with a label
+        self.checkbox = QCheckBox("Enable Premium Features")
+
+        # 2. Connect the state change signal to a function
+        # In PySide6, this signal passes an integer representation of the state
+        self.checkbox.stateChanged.connect(self.handle_state_changed)
+
+        # Layout management
+        layout = QVBoxLayout()
+        layout.addWidget(self.checkbox)
+
+        container = QWidget()
+        container.setLayout(layout)
+        self.setCentralWidget(container)
+
+    def handle_state_changed(self, state):
+        # 3. Check if the checkbox is checked
+        # You can use the boolean helper .isChecked() 
+        if self.checkbox.isChecked():
+            print("Checkbox is Checked!")
+        else:
+            print("Checkbox is Unchecked!")
+
+        # Alternatively, evaluate the specific state integer
+        print(f"Raw state integer: {state}")
+
+app = QApplication(sys.argv)
+window = MainWindow()
+window.show()
+sys.exit(app.exec())
