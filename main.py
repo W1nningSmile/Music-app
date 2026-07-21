@@ -3,7 +3,7 @@ import ui.album_frame_1400x800 as album_wdiget_template
 import ui.create_album_ui as create_album
 
 from PySide6.QtWidgets import QMainWindow, QApplication, QWidget, QDialog, QFileDialog, QMessageBox, QSpacerItem, QSizePolicy
-from PySide6.QtGui import QPixmap, QMovie, QFont
+from PySide6.QtGui import QPixmap, QMovie, QIcon
 from PySide6.QtMultimedia import QMediaPlayer, QAudioOutput, QMediaDevices
 from PySide6.QtCore import QUrl, QTimer
 
@@ -26,7 +26,9 @@ class MainWindow(QMainWindow):
 
         self.ui = main_page_ui.Ui_MainWindow()
         self.ui.setupUi(self)
-        self.setFixedSize(1400, 800)
+        #self.setFixedSize(1400, 800)
+
+        self.setWindowIcon(QIcon("image_ressources\icon.ico"))
 
         self.saving_pannel_state = None
 
